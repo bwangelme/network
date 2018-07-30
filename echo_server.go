@@ -1,10 +1,10 @@
 package main
 
 import (
-	"net"
-	"log"
+	"bufio"
 	"fmt"
-	"io"
+	"log"
+	"net"
 )
 
 func main() {
@@ -26,11 +26,30 @@ func main() {
 		}
 
 		go func(conn net.Conn) {
-			n, err := io.Copy(conn, conn)
-			if err != nil {
-				log.Fatalln(err)
+			r := bufio.NewReader(conn)
+			var total = 0
+
+			for {
+				buf, err := r.ReadBytes('\t')
+				if err != nil {
+					log.Fatalln(err)
+				}
+
+				fmt.Println(string(buf))
+
+				if string(buf) == "exit\t" {
+					break
+				}
+
+				n, err := conn.Write(buf)
+				if err != nil {
+					log.Fatalln(err)
+				}
+
+				total += n
 			}
-			fmt.Printf("Total Copy %d bytes\n", n)
+
+			fmt.Printf("Total Copy %d bytes\n", total)
 			conn.Close()
 		}(conn)
 	}

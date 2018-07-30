@@ -1,11 +1,11 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"io"
 	"log"
 	"net"
-	"bufio"
 	"os"
 )
 
@@ -21,7 +21,7 @@ func write(conn net.Conn) {
 			}
 		}
 
-		content := make([]byte, len(line) + 1)
+		content := make([]byte, len(line)+1)
 		copy(content, line)
 		content[len(line)] = '\t'
 
@@ -30,7 +30,7 @@ func write(conn net.Conn) {
 		fmt.Printf("[Write]: `%s`\n", content)
 	}
 
-	conn.Close()
+	conn.Write([]byte("exit\t"))
 }
 
 func read(conn net.Conn, quit chan<- bool) {
@@ -46,13 +46,12 @@ func read(conn net.Conn, quit chan<- bool) {
 			fmt.Println(err)
 			log.Fatalln(err)
 		}
-		//TODO: 如何正确地关闭TCP连接，这里报错:
-		// read tcp 127.0.0.1:65438->127.0.0.1:2000: use of closed network connection
+		// Write 已经把 conn 給關閉了，所以read這裏不能夠再使用了
 		fmt.Printf("[Read]:`%s`\n", buf)
 
 	}
 
-	quit<-true
+	quit <- true
 
 }
 
@@ -68,5 +67,6 @@ func main() {
 	go read(conn, quit)
 	write(conn)
 
+	fmt.Println("Wait read to end")
 	<-quit
 }
