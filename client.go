@@ -9,7 +9,19 @@ import (
 	"os"
 )
 
-func write(conn net.Conn) {
+type TcpClient struct {
+	addr string
+	quit chan bool
+}
+
+func NewTcpClient(addr string) *TcpClient {
+	return &TcpClient{
+		addr: addr,
+		quit: make(chan bool),
+	}
+}
+
+func (self *TcpClient) write(conn net.Conn) {
 	stdReader := bufio.NewReader(os.Stdin)
 	for {
 		line, _, err := stdReader.ReadLine()
@@ -33,7 +45,7 @@ func write(conn net.Conn) {
 	conn.Write([]byte("exit\t"))
 }
 
-func read(conn net.Conn, quit chan<- bool) {
+func (self *TcpClient) read(conn net.Conn) {
 	r := bufio.NewReader(conn)
 
 	for {
@@ -51,22 +63,19 @@ func read(conn net.Conn, quit chan<- bool) {
 
 	}
 
-	quit <- true
+	self.quit <- true
 
 }
 
-func main() {
-	quit := make(chan bool)
-	addr := ":2000"
-
-	conn, err := net.Dial("tcp", addr)
+func (self *TcpClient) Start() {
+	conn, err := net.Dial("tcp", self.addr)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	go read(conn, quit)
-	write(conn)
+	go self.read(conn)
+	self.write(conn)
 
 	fmt.Println("Wait read to end")
-	<-quit
+	<-self.quit
 }
