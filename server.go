@@ -97,6 +97,6 @@ func conn_handler(conn net.Conn) {
 		total += n
 	}
 
-	fmt.Printf("Total Copy %d bytes\n", total)
+	fmt.Printf("Total Copy %d bytes from client\n", total)
 	conn.Close()
 }
